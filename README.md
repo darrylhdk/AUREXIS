@@ -49,7 +49,7 @@ Tu peux lui brancher n'importe quel LLM (GPT-4, Claude, Mistral, ou un modèle l
 
 ### Windows — PowerShell
 ```powershell
-iwr -useb https://raw.githubusercontent.com/TON_USERNAME/aurexis/main/install_aurexis.ps1 | iex
+iwr -useb https://raw.githubusercontent.com/darrylhdk/aurexis/main/install_aurexis.ps1 | iex
 ```
 
 ### Windows — Double-clic
@@ -76,7 +76,7 @@ Si tu préfères tout faire toi-même :
 
 ```bash
 # 1. Clone le projet
-git clone https://github.com/TON_USERNAME/aurexis.git
+git clone https://github.com/darrylhdk/aurexis.git
 cd aurexis
 
 # 2. Installe les dépendances
