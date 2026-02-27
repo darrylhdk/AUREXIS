@@ -1,0 +1,642 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>AUREXIS — Universal AI Agent OS</title>
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --sidebar: #0f0f18;
+    --panel: #13131f;
+    --border: #1e1e30;
+    --accent: #6c63ff;
+    --accent2: #00d4aa;
+    --text: #e0e0f0;
+    --muted: #888;
+    --danger: #ff4466;
+    --success: #00c87a;
+    --user-bg: #1a1a2e;
+    --ai-bg: #13131f;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:var(--bg); color:var(--text); font-family:'Inter','Segoe UI',sans-serif; display:flex; height:100vh; overflow:hidden; }
+
+  /* ── Sidebar ── */
+  #sidebar {
+    width:260px; background:var(--sidebar); border-right:1px solid var(--border);
+    display:flex; flex-direction:column; padding:16px; gap:12px; flex-shrink:0;
+  }
+  .logo { display:flex; align-items:center; gap:10px; padding:8px 0 16px; border-bottom:1px solid var(--border); }
+  .logo-icon { width:36px; height:36px; background:linear-gradient(135deg,var(--accent),var(--accent2)); border-radius:8px; display:flex; align-items:center; justify-content:center; font-weight:900; font-size:14px; color:white; }
+  .logo-name { font-weight:700; font-size:16px; letter-spacing:.5px; }
+  .logo-ver { font-size:10px; color:var(--muted); }
+  
+  .sidebar-section { margin-top:8px; }
+  .section-label { font-size:10px; text-transform:uppercase; letter-spacing:1px; color:var(--muted); margin-bottom:8px; }
+  
+  select, input[type=text], input[type=password] {
+    width:100%; background:var(--panel); border:1px solid var(--border); color:var(--text);
+    padding:8px 10px; border-radius:6px; font-size:13px; outline:none;
+    transition: border-color .2s;
+  }
+  select:focus, input:focus { border-color:var(--accent); }
+  
+  .btn {
+    width:100%; padding:8px 12px; border-radius:6px; border:none; cursor:pointer;
+    font-size:13px; font-weight:600; transition:all .2s;
+  }
+  .btn-primary { background:var(--accent); color:white; }
+  .btn-primary:hover { background:#5a54e8; }
+  .btn-outline { background:transparent; border:1px solid var(--border); color:var(--text); }
+  .btn-outline:hover { border-color:var(--accent); color:var(--accent); }
+  .btn-sm { padding:5px 10px; font-size:12px; width:auto; }
+  .btn-danger { background:var(--danger); color:white; }
+
+  .mode-grid { display:grid; grid-template-columns:1fr 1fr; gap:6px; }
+  .mode-btn {
+    padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--panel);
+    color:var(--text); font-size:11px; cursor:pointer; text-align:center; transition:all .2s;
+  }
+  .mode-btn:hover, .mode-btn.active { border-color:var(--accent); color:var(--accent); background:#1a1a2e; }
+  
+  .status-bar {
+    margin-top:auto; padding:10px; background:var(--panel); border-radius:8px;
+    font-size:11px; color:var(--muted);
+  }
+  .status-item { display:flex; justify-content:space-between; margin-bottom:4px; }
+  .status-val { color:var(--accent2); font-weight:600; }
+  .dot { width:6px; height:6px; border-radius:50%; display:inline-block; margin-right:4px; }
+  .dot-green { background:var(--success); }
+  .dot-red { background:var(--danger); }
+  .dot-yellow { background:#ffaa00; }
+
+  /* ── Main chat area ── */
+  #main { flex:1; display:flex; flex-direction:column; overflow:hidden; }
+  
+  #topbar {
+    padding:14px 20px; border-bottom:1px solid var(--border); display:flex;
+    align-items:center; justify-content:space-between; background:var(--sidebar);
+  }
+  .topbar-title { font-weight:700; font-size:15px; }
+  .topbar-actions { display:flex; gap:8px; }
+  
+  #chat-window {
+    flex:1; overflow-y:auto; padding:20px; display:flex; flex-direction:column; gap:16px;
+    scroll-behavior:smooth;
+  }
+  #chat-window::-webkit-scrollbar { width:4px; }
+  #chat-window::-webkit-scrollbar-thumb { background:var(--border); border-radius:2px; }
+  
+  .message { display:flex; gap:12px; max-width:820px; }
+  .message.user { flex-direction:row-reverse; margin-left:auto; }
+  
+  .avatar {
+    width:34px; height:34px; border-radius:8px; flex-shrink:0;
+    display:flex; align-items:center; justify-content:center; font-size:14px; font-weight:700;
+  }
+  .avatar-ai { background:linear-gradient(135deg,var(--accent),var(--accent2)); }
+  .avatar-user { background:linear-gradient(135deg,#ff6b6b,#ff4466); }
+  
+  .bubble {
+    padding:12px 16px; border-radius:12px; font-size:14px; line-height:1.6;
+    max-width:680px;
+  }
+  .bubble-ai { background:var(--ai-bg); border:1px solid var(--border); border-radius:4px 12px 12px 12px; }
+  .bubble-user { background:var(--user-bg); border:1px solid #2a2a40; border-radius:12px 4px 12px 12px; }
+  
+  .typing { display:flex; align-items:center; gap:4px; padding:8px 0; }
+  .typing span { width:6px; height:6px; background:var(--muted); border-radius:50%; animation:bounce .8s infinite; }
+  .typing span:nth-child(2) { animation-delay:.15s; }
+  .typing span:nth-child(3) { animation-delay:.3s; }
+  @keyframes bounce { 0%,80%,100%{transform:scale(1)} 40%{transform:scale(1.4)} }
+
+  /* tool result chip */
+  .tool-chip {
+    display:inline-flex; align-items:center; gap:6px;
+    background:#1a1a30; border:1px solid var(--border);
+    padding:4px 10px; border-radius:20px; font-size:12px; color:var(--accent2); margin:4px 0;
+  }
+
+  #input-area {
+    padding:16px 20px; border-top:1px solid var(--border); background:var(--sidebar);
+    display:flex; gap:10px; align-items:flex-end;
+  }
+  #msg-input {
+    flex:1; background:var(--panel); border:1px solid var(--border); color:var(--text);
+    padding:12px 14px; border-radius:10px; font-size:14px; resize:none;
+    max-height:120px; outline:none; font-family:inherit; line-height:1.5;
+    transition:border-color .2s;
+  }
+  #msg-input:focus { border-color:var(--accent); }
+  #send-btn {
+    width:44px; height:44px; border-radius:10px; border:none;
+    background:var(--accent); color:white; cursor:pointer; font-size:18px;
+    display:flex; align-items:center; justify-content:center;
+    transition:all .2s; flex-shrink:0;
+  }
+  #send-btn:hover { background:#5a54e8; transform:scale(1.05); }
+  #send-btn:disabled { opacity:.4; cursor:default; transform:none; }
+  
+  /* ── Settings Panel (right drawer) ── */
+  #settings-panel {
+    width:0; overflow:hidden; transition:width .3s; border-left:1px solid var(--border);
+    background:var(--sidebar); display:flex; flex-direction:column;
+  }
+  #settings-panel.open { width:320px; }
+  .settings-inner { padding:20px; min-width:320px; overflow-y:auto; height:100%; }
+  .settings-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; }
+  .settings-header h3 { font-size:15px; font-weight:700; }
+  .close-btn { background:none; border:none; color:var(--muted); cursor:pointer; font-size:20px; }
+  .field-group { margin-bottom:16px; }
+  .field-label { font-size:11px; color:var(--muted); margin-bottom:6px; text-transform:uppercase; letter-spacing:.5px; }
+  
+  /* Tabs */
+  .tab-bar { display:flex; gap:2px; border-bottom:1px solid var(--border); margin-bottom:16px; }
+  .tab { padding:8px 14px; font-size:12px; cursor:pointer; border-bottom:2px solid transparent; color:var(--muted); transition:all .2s; }
+  .tab.active { color:var(--accent); border-bottom-color:var(--accent); }
+  .tab-content { display:none; }
+  .tab-content.active { display:block; }
+  
+  /* MCP tools list */
+  .tool-item {
+    background:var(--panel); border:1px solid var(--border); border-radius:6px;
+    padding:8px 10px; margin-bottom:6px; font-size:12px;
+  }
+  .tool-name { font-weight:600; color:var(--accent2); }
+  .tool-desc { color:var(--muted); margin-top:2px; }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width:4px; height:4px; }
+  ::-webkit-scrollbar-track { background:transparent; }
+  ::-webkit-scrollbar-thumb { background:var(--border); border-radius:2px; }
+
+  /* Code blocks */
+  pre { background:#0d0d1a; border:1px solid var(--border); border-radius:6px; padding:12px; overflow-x:auto; font-size:12px; }
+  code { font-family:'JetBrains Mono','Fira Code',monospace; }
+
+  .tag { display:inline-block; padding:2px 8px; border-radius:4px; font-size:11px; font-weight:600; }
+  .tag-green { background:#0a2a1a; color:var(--success); border:1px solid #0a4a2a; }
+  .tag-blue { background:#0a0a2a; color:var(--accent); border:1px solid var(--border); }
+  .tag-orange { background:#2a1a00; color:#ffaa00; border:1px solid #3a2a00; }
+</style>
+</head>
+<body>
+
+<!-- ══ SIDEBAR ══════════════════════════════════════════════ -->
+<div id="sidebar">
+  <div class="logo">
+    <div class="logo-icon">A</div>
+    <div>
+      <div class="logo-name">AUREXIS</div>
+      <div class="logo-ver">Universal AI Agent OS v1.0</div>
+    </div>
+  </div>
+
+  <!-- LLM selector -->
+  <div class="sidebar-section">
+    <div class="section-label">Active LLM</div>
+    <select id="llm-select" onchange="switchLLM(this.value)">
+      <option value="phi2_local">⚡ Phi-2 (Local)</option>
+      <option value="openai">🟢 OpenAI GPT</option>
+      <option value="anthropic">🟣 Anthropic Claude</option>
+      <option value="mistral">🔵 Mistral AI</option>
+      <option value="groq">⚡ Groq (Ultra Fast)</option>
+      <option value="kimi">🌙 Kimi / Moonshot</option>
+      <option value="custom">⚙️ Custom API</option>
+    </select>
+  </div>
+
+  <!-- Agent mode -->
+  <div class="sidebar-section">
+    <div class="section-label">Agent Mode</div>
+    <div class="mode-grid">
+      <div class="mode-btn active" onclick="switchMode('assistant',this)">🤖 Assistant</div>
+      <div class="mode-btn" onclick="switchMode('cyber',this)">🔐 Cyber</div>
+      <div class="mode-btn" onclick="switchMode('business',this)">📈 Business</div>
+      <div class="mode-btn" onclick="switchMode('autonomous',this)">🚀 Autonomous</div>
+    </div>
+  </div>
+
+  <!-- Quick actions -->
+  <div class="sidebar-section">
+    <div class="section-label">Actions</div>
+    <button class="btn btn-outline" style="margin-bottom:6px" onclick="clearChat()">🗑️ Clear Chat</button>
+    <button class="btn btn-outline" onclick="openSettings('mcp')">🔌 MCP Tools (<span id="tool-count">0</span>)</button>
+  </div>
+
+  <!-- Status -->
+  <div class="status-bar">
+    <div class="section-label">Status</div>
+    <div class="status-item">
+      <span>LLM</span>
+      <span class="status-val" id="status-llm">phi2_local</span>
+    </div>
+    <div class="status-item">
+      <span>Mode</span>
+      <span class="status-val" id="status-mode">assistant</span>
+    </div>
+    <div class="status-item">
+      <span>MCP Tools</span>
+      <span class="status-val" id="status-tools">0</span>
+    </div>
+    <div class="status-item">
+      <span>Server</span>
+      <span><span class="dot dot-green"></span><span class="status-val">running</span></span>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MAIN ══════════════════════════════════════════════════ -->
+<div id="main">
+  <div id="topbar">
+    <div>
+      <span class="topbar-title">AUREXIS Chat</span>
+      <span id="mode-badge" class="tag tag-blue" style="margin-left:10px">assistant</span>
+    </div>
+    <div class="topbar-actions">
+      <button class="btn btn-outline btn-sm" onclick="openSettings('api')">🔑 API Keys</button>
+      <button class="btn btn-outline btn-sm" onclick="openSettings('prompts')">📝 Prompts</button>
+      <button class="btn btn-outline btn-sm" onclick="openSettings('connectors')">🔗 Connectors</button>
+    </div>
+  </div>
+
+  <div id="chat-window">
+    <div class="message">
+      <div class="avatar avatar-ai">A</div>
+      <div class="bubble bubble-ai">
+        👋 Welcome to <strong>AUREXIS</strong> — Universal AI Agent OS<br><br>
+        I'm your local AI agent. I support multiple LLMs, MCP tools, and can operate in 4 modes.<br><br>
+        <strong>Quick start:</strong><br>
+        • Select an LLM from the sidebar<br>
+        • Choose an agent mode<br>
+        • Connect MCP servers for extended capabilities<br>
+        • Use the Settings panel to manage API keys
+      </div>
+    </div>
+  </div>
+
+  <div id="input-area">
+    <textarea id="msg-input" placeholder="Send a message... (Shift+Enter for new line)" rows="1"
+      onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
+    <button id="send-btn" onclick="sendMessage()">➤</button>
+  </div>
+</div>
+
+<!-- ══ SETTINGS PANEL ════════════════════════════════════════ -->
+<div id="settings-panel">
+  <div class="settings-inner">
+    <div class="settings-header">
+      <h3>⚙️ Settings</h3>
+      <button class="close-btn" onclick="closeSettings()">✕</button>
+    </div>
+
+    <div class="tab-bar">
+      <div class="tab active" onclick="switchTab('api',this)">API Keys</div>
+      <div class="tab" onclick="switchTab('mcp',this)">MCP</div>
+      <div class="tab" onclick="switchTab('prompts',this)">Prompts</div>
+      <div class="tab" onclick="switchTab('connectors',this)">Connectors</div>
+    </div>
+
+    <!-- API Keys Tab -->
+    <div id="tab-api" class="tab-content active">
+      <div id="key-list">Loading...</div>
+      <div style="margin-top:16px">
+        <div class="field-label">Add / Update Key</div>
+        <select id="key-provider" style="margin-bottom:8px">
+          <option value="openai">OpenAI</option>
+          <option value="anthropic">Anthropic</option>
+          <option value="mistral">Mistral</option>
+          <option value="groq">Groq</option>
+          <option value="kimi">Kimi</option>
+          <option value="telegram">Telegram</option>
+          <option value="discord">Discord</option>
+        </select>
+        <input type="password" id="key-value" placeholder="sk-..." style="margin-bottom:8px"/>
+        <button class="btn btn-primary" onclick="saveKey()">Save Key</button>
+      </div>
+    </div>
+
+    <!-- MCP Tab -->
+    <div id="tab-mcp" class="tab-content">
+      <div class="field-label">Connect MCP Server</div>
+      <input type="text" id="mcp-url" placeholder="http://localhost:3000" style="margin-bottom:8px"/>
+      <input type="text" id="mcp-name" placeholder="Server name (optional)" style="margin-bottom:8px"/>
+      <button class="btn btn-primary" onclick="connectMCP()" style="margin-bottom:16px">Connect</button>
+      <div class="field-label">Registered Tools</div>
+      <div id="tool-list">No tools registered yet.</div>
+    </div>
+
+    <!-- Prompts Tab -->
+    <div id="tab-prompts" class="tab-content">
+      <div class="field-label">Edit Prompt</div>
+      <select id="prompt-select" onchange="loadPrompt(this.value)" style="margin-bottom:8px">
+        <option value="default">Default</option>
+        <option value="phi2_local">Phi-2 Local</option>
+        <option value="openai">OpenAI</option>
+        <option value="anthropic">Anthropic</option>
+        <option value="cyber_mode">Cyber Mode</option>
+        <option value="business_mode">Business Mode</option>
+        <option value="autonomous_mode">Autonomous Mode</option>
+      </select>
+      <textarea id="prompt-editor" style="width:100%;height:200px;background:var(--panel);border:1px solid var(--border);color:var(--text);padding:10px;border-radius:6px;font-size:12px;font-family:monospace;resize:vertical" placeholder="System prompt..."></textarea>
+      <button class="btn btn-primary" onclick="savePrompt()" style="margin-top:8px">Save Prompt</button>
+    </div>
+
+    <!-- Connectors Tab -->
+    <div id="tab-connectors" class="tab-content">
+      <div id="connector-list">
+        <div class="field-group">
+          <div class="field-label">Telegram Bot</div>
+          <input type="password" id="tg-token" placeholder="Bot token from @BotFather"/>
+          <button class="btn btn-primary btn-sm" onclick="saveConnectorKey('telegram','tg-token')" style="margin-top:6px;width:100%">Save Token</button>
+        </div>
+        <div class="field-group">
+          <div class="field-label">Discord Bot</div>
+          <input type="password" id="dc-token" placeholder="Discord bot token"/>
+          <button class="btn btn-primary btn-sm" onclick="saveConnectorKey('discord','dc-token')" style="margin-top:6px;width:100%">Save Token</button>
+        </div>
+        <div class="field-group">
+          <div class="field-label">WhatsApp (Meta)</div>
+          <input type="password" id="wa-token" placeholder="Meta API access token"/>
+          <button class="btn btn-primary btn-sm" onclick="saveConnectorKey('whatsapp','wa-token')" style="margin-top:6px;width:100%">Save Token</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── WebSocket ─────────────────────────────────────
+let ws = null;
+let isStreaming = false;
+let currentBubble = null;
+let currentMode = 'assistant';
+let currentLLM = 'phi2_local';
+
+function connectWS() {
+  ws = new WebSocket(`ws://${location.host}/ws/chat`);
+  ws.onclose = () => setTimeout(connectWS, 2000);
+  ws.onmessage = (e) => {
+    const data = JSON.parse(e.data);
+    if (data.type === 'chunk') {
+      if (!currentBubble) currentBubble = startAIBubble();
+      currentBubble.innerHTML += escapeHtml(data.content);
+      scrollBottom();
+    } else if (data.type === 'done') {
+      finishStreaming();
+    } else if (data.type === 'response') {
+      if (!currentBubble) currentBubble = startAIBubble();
+      currentBubble.innerHTML = renderMarkdown(data.content);
+      finishStreaming();
+    }
+  };
+}
+connectWS();
+
+function startAIBubble() {
+  removeTyping();
+  const msg = document.createElement('div');
+  msg.className = 'message';
+  msg.innerHTML = `<div class="avatar avatar-ai">A</div><div class="bubble bubble-ai"></div>`;
+  document.getElementById('chat-window').appendChild(msg);
+  scrollBottom();
+  return msg.querySelector('.bubble');
+}
+
+function finishStreaming() {
+  isStreaming = false;
+  currentBubble = null;
+  document.getElementById('send-btn').disabled = false;
+}
+
+// ── Send message ──────────────────────────────────
+function sendMessage() {
+  const input = document.getElementById('msg-input');
+  const text = input.value.trim();
+  if (!text || isStreaming) return;
+
+  // Render user message
+  const chat = document.getElementById('chat-window');
+  const userMsg = document.createElement('div');
+  userMsg.className = 'message user';
+  userMsg.innerHTML = `<div class="avatar avatar-user">U</div><div class="bubble bubble-user">${escapeHtml(text)}</div>`;
+  chat.appendChild(userMsg);
+
+  // Show typing
+  const typing = document.createElement('div');
+  typing.className = 'message'; typing.id = 'typing';
+  typing.innerHTML = `<div class="avatar avatar-ai">A</div><div class="bubble bubble-ai"><div class="typing"><span></span><span></span><span></span></div></div>`;
+  chat.appendChild(typing);
+  scrollBottom();
+
+  input.value = '';
+  input.style.height = 'auto';
+  isStreaming = true;
+  document.getElementById('send-btn').disabled = true;
+
+  if (ws && ws.readyState === 1) {
+    ws.send(JSON.stringify({ message: text, stream: true }));
+  } else {
+    // Fallback REST
+    fetch('/api/chat', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({message:text}) })
+      .then(r => r.json())
+      .then(d => {
+        removeTyping();
+        const bubble = startAIBubble();
+        bubble.innerHTML = renderMarkdown(d.response);
+        finishStreaming();
+      });
+  }
+}
+
+function removeTyping() {
+  const t = document.getElementById('typing');
+  if (t) t.remove();
+}
+
+function handleKey(e) {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+}
+
+function autoResize(el) {
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 120) + 'px';
+}
+
+function scrollBottom() {
+  const chat = document.getElementById('chat-window');
+  chat.scrollTop = chat.scrollHeight;
+}
+
+function clearChat() {
+  const chat = document.getElementById('chat-window');
+  chat.innerHTML = '<div class="message"><div class="avatar avatar-ai">A</div><div class="bubble bubble-ai">Chat cleared. How can I help?</div></div>';
+}
+
+// ── LLM & Mode ────────────────────────────────────
+function switchLLM(name) {
+  const key = prompt(`API key for "${name}" (leave blank if not required):`);
+  fetch('/api/llm/switch', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({llm_name: name, api_key: key || ''})
+  }).then(r => r.json()).then(d => {
+    if (d.success) {
+      currentLLM = name;
+      document.getElementById('status-llm').textContent = name;
+      addSystemMsg(`✓ Switched to LLM: ${name}`);
+    } else {
+      alert('Error switching LLM: ' + JSON.stringify(d));
+    }
+  });
+}
+
+function switchMode(mode, el) {
+  document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  fetch('/api/mode/switch', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({mode})
+  }).then(() => {
+    currentMode = mode;
+    document.getElementById('status-mode').textContent = mode;
+    document.getElementById('mode-badge').textContent = mode;
+    addSystemMsg(`✓ Mode: ${mode}`);
+  });
+}
+
+function addSystemMsg(text) {
+  const chat = document.getElementById('chat-window');
+  const el = document.createElement('div');
+  el.style.cssText = 'text-align:center;font-size:11px;color:var(--muted);padding:4px 0';
+  el.textContent = text;
+  chat.appendChild(el);
+  scrollBottom();
+}
+
+// ── Settings Panel ────────────────────────────────
+function openSettings(tab) {
+  const panel = document.getElementById('settings-panel');
+  panel.classList.add('open');
+  switchTab(tab, document.querySelector(`.tab`));
+  if (tab === 'api') loadKeyList();
+  if (tab === 'mcp') loadToolList();
+}
+
+function closeSettings() {
+  document.getElementById('settings-panel').classList.remove('open');
+}
+
+function switchTab(name, el) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  // Find correct tab
+  document.querySelectorAll('.tab').forEach(t => {
+    if (t.textContent.toLowerCase().includes(name)) t.classList.add('active');
+  });
+  const content = document.getElementById(`tab-${name}`);
+  if (content) content.classList.add('active');
+}
+
+function saveKey() {
+  const provider = document.getElementById('key-provider').value;
+  const key = document.getElementById('key-value').value.trim();
+  if (!key) return alert('Enter a key');
+  fetch('/api/keys', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({provider, key})
+  }).then(() => { alert(`Key saved for ${provider}`); document.getElementById('key-value').value = ''; });
+}
+
+function saveConnectorKey(provider, inputId) {
+  const key = document.getElementById(inputId).value.trim();
+  if (!key) return;
+  fetch('/api/keys', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({provider, key})
+  }).then(() => alert(`${provider} key saved`));
+}
+
+function loadKeyList() {
+  document.getElementById('key-list').innerHTML = '<small style="color:var(--muted)">Keys are encrypted and stored locally.</small>';
+}
+
+function connectMCP() {
+  const url = document.getElementById('mcp-url').value.trim();
+  const name = document.getElementById('mcp-name').value.trim();
+  if (!url) return alert('Enter MCP server URL');
+  fetch('/api/mcp/connect', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({url, name})
+  }).then(r => r.json()).then(d => {
+    if (d.success) {
+      alert(`Connected! ${d.tools} tools registered.`);
+      loadToolList();
+    } else {
+      alert('Error: ' + d.error);
+    }
+  });
+}
+
+function loadToolList() {
+  fetch('/api/mcp/tools').then(r => r.json()).then(tools => {
+    const count = tools.length;
+    document.getElementById('tool-count').textContent = count;
+    document.getElementById('status-tools').textContent = count;
+    const list = document.getElementById('tool-list');
+    if (!count) { list.innerHTML = 'No tools registered.'; return; }
+    list.innerHTML = tools.map(t =>
+      `<div class="tool-item"><div class="tool-name">🔧 ${t.name}</div><div class="tool-desc">${t.description||''}</div></div>`
+    ).join('');
+  });
+}
+
+function loadPrompt(name) {
+  fetch(`/api/prompts/${name}`).then(r => r.json()).then(d => {
+    document.getElementById('prompt-editor').value = d.content;
+  }).catch(() => {
+    document.getElementById('prompt-editor').value = '';
+  });
+}
+
+function savePrompt() {
+  const name = document.getElementById('prompt-select').value;
+  const content = document.getElementById('prompt-editor').value;
+  fetch(`/api/prompts/${name}`, {
+    method:'PUT', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({content})
+  }).then(() => alert(`Prompt '${name}' saved`));
+}
+
+// ── Utils ─────────────────────────────────────────
+function escapeHtml(text) {
+  return text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');
+}
+
+function renderMarkdown(text) {
+  // Very basic markdown
+  return text
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/```([\s\S]*?)```/g,'<pre><code>$1</code></pre>')
+    .replace(/`([^`]+)`/g,'<code>$1</code>')
+    .replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>')
+    .replace(/\*(.*?)\*/g,'<em>$1</em>')
+    .replace(/\n/g,'<br>');
+}
+
+// Load initial status
+fetch('/api/status').then(r => r.json()).then(d => {
+  document.getElementById('status-llm').textContent = d.llm;
+  document.getElementById('status-mode').textContent = d.mode;
+  document.getElementById('status-tools').textContent = d.mcp_tools;
+  document.getElementById('tool-count').textContent = d.mcp_tools;
+  document.getElementById('mode-badge').textContent = d.mode;
+  // Sync selects
+  document.getElementById('llm-select').value = d.llm;
+  document.querySelectorAll('.mode-btn').forEach(b => {
+    b.classList.toggle('active', b.textContent.toLowerCase().includes(d.mode));
+  });
+}).catch(() => {});
+</script>
+</body>
+</html>

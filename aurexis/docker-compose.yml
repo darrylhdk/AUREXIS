@@ -1,0 +1,42 @@
+version: "3.9"
+
+services:
+  aurexis:
+    build: .
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./data:/app/data
+      - ./config:/app/config
+      - ./models:/app/models
+      - ./prompts:/app/prompts
+    environment:
+      - HOST=0.0.0.0
+      - PORT=8000
+      - DEBUG=false
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/status"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Optionnel: PostgreSQL pour mode SaaS
+  # db:
+  #   image: postgres:16
+  #   environment:
+  #     POSTGRES_DB: aurexis
+  #     POSTGRES_USER: aurexis
+  #     POSTGRES_PASSWORD: changeme
+  #   volumes:
+  #     - pgdata:/var/lib/postgresql/data
+
+  # Optionnel: Redis pour cache/sessions SaaS
+  # redis:
+  #   image: redis:7-alpine
+  #   volumes:
+  #     - redisdata:/data
+
+# volumes:
+#   pgdata:
+#   redisdata:
